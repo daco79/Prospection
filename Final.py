@@ -3,7 +3,7 @@
 import requests # Pour les requetes API
 import argparse # Pour recuperer les arguments
 import pandas as pd # Pour sauvegarder le fichier excel
-#import json
+import json
 
 API_KEY = "772efebfeb103f49bfc49b9e4b7fceede51850312d8a45af"
 
