@@ -5,15 +5,58 @@ import requests
 from pathlib import Path
 from typing import Optional
 
-# === CONFIG ===
-PARCELLES_FILE = Path("parcelles_a_aplatirTEST1.json")       # ton JSON d'entrée avec parcelles
+
+# === CONFIG A MODIFIER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ===
+VALEUR_PROPRIETAIRE  = "1" # pour le nombre de propritaire de l'immeuble 
+VALEUR_REGION  = "75111" # slection de la zone de recherche 
+VALEUR_PAGE = "20" #nombre de resulat ATTENTION si c'est pour test ne pas depasser 10, lors d'un vrai lancement mettre 9999 et +
+
+# ne pas oublier de changer le nom de fichier excel et si vous ne voulais pas que les fichier s'ecrase ou puisse poser probleme renomer le siren et l'entrpise aussi 
 SIREN_FILE = Path("sirens.txt")               # liste de siren extraits
 ENTREPRISES_FILE = Path("entreprises.json")   # JSON sauvegardé des réponses API
-OUTPUT_XLSX = Path("fusion_finale2.xlsx")      # Excel final fusionné
+OUTPUT_XLSX = Path("EXCEL_parcelles_entreprise_final.xlsx")      # Excel final fusionné
 
-# ⚠️ Mets ta vraie clé API ici
 API_KEY = "772efebfeb103f49bfc49b9e4b7fceede51850312d8a45af"
+API_URL_PARCELLE  = "https://api-immobilier.pappers.fr/v1/parcelles"
+
+VALEUR_cessation   = "false"
+
+
+
+
+
+# Appel API
+url_PARCELLE = f"https://api-immobilier.pappers.fr/v1/parcelles?api_token={API_KEY}&code_commune={VALEUR_REGION}&bases=proprietaires&nombre_proprietaires_max={VALEUR_PROPRIETAIRE}&categorie_juridique_proprietaire=1000&categorie_juridique_proprietaire=2110&categorie_juridique_proprietaire=2120&categorie_juridique_proprietaire=2210&categorie_juridique_proprietaire=2220&categorie_juridique_proprietaire=2310&categorie_juridique_proprietaire=2320&categorie_juridique_proprietaire=2385&categorie_juridique_proprietaire=2400&categorie_juridique_proprietaire=2900&categorie_juridique_proprietaire=3110&categorie_juridique_proprietaire=3120&categorie_juridique_proprietaire=3205&categorie_juridique_proprietaire=3210&categorie_juridique_proprietaire=3220&categorie_juridique_proprietaire=3290&categorie_juridique_proprietaire=5202&categorie_juridique_proprietaire=5203&categorie_juridique_proprietaire=5306&categorie_juridique_proprietaire=5307&categorie_juridique_proprietaire=5308&categorie_juridique_proprietaire=5309&categorie_juridique_proprietaire=5310&categorie_juridique_proprietaire=5370&categorie_juridique_proprietaire=5385&categorie_juridique_proprietaire=5426&categorie_juridique_proprietaire=5430&categorie_juridique_proprietaire=5431&categorie_juridique_proprietaire=5432&categorie_juridique_proprietaire=5442&categorie_juridique_proprietaire=5443&categorie_juridique_proprietaire=5451&categorie_juridique_proprietaire=5453&categorie_juridique_proprietaire=5454&categorie_juridique_proprietaire=5455&categorie_juridique_proprietaire=5458&categorie_juridique_proprietaire=5459&categorie_juridique_proprietaire=5460&categorie_juridique_proprietaire=5470&categorie_juridique_proprietaire=5485&categorie_juridique_proprietaire=5499&categorie_juridique_proprietaire=5710&categorie_juridique_proprietaire=5785&categorie_juridique_proprietaire=6521&categorie_juridique_proprietaire=6539&categorie_juridique_proprietaire=6540&categorie_juridique_proprietaire=6541&categorie_juridique_proprietaire=6599&categorie_juridique_proprietaire=6901&par_page={VALEUR_PAGE}"
+# data_PARCELLE = requests.request('GET', url_PARCELLE)
+
+print("URL utilisée :", url_PARCELLE)
+
+response = requests.get(url_PARCELLE)
+if response.status_code != 200:
+    print("❌ Erreur API :", response.status_code, response.text)
+    exit()
+
+data_json = response.json()
+
+# On récupère seulement la liste "resultats"
+parcelles = data_json.get("resultats", [])
+
+# === Sauvegarde en JSON nettoyé ===
+with open("PARCELLESDERETOUR.json", "w", encoding="utf-8") as f:
+    json.dump(parcelles, f, ensure_ascii=False, indent=2)
+
+print("✅ Résultat JSON nettoyé -> TEST_PARCELLES_AUTO.json")
+
+#########################################################################################################
+
+
+
+
+
+# === CONFIG ===
+PARCELLES_FILE = Path("PARCELLESDERETOUR.json")       # ton JSON d'entrée avec parcelles
 API_URL = "https://api.pappers.fr/v2/entreprise"
+
 
 # Colonnes attendues dans l'Excel final
 COLONNES_FINALES = [
@@ -64,7 +107,7 @@ def extract_parcelles(json_data) -> pd.DataFrame:
 def fetch_api_for_siren(siren: str):
     """Appelle l'API Pappers pour un SIREN donné."""
     try:
-        resp = requests.get(API_URL, params={"api_token": API_KEY, "siren": siren}, timeout=10)
+        resp = requests.get(API_URL, params={"api_token": API_KEY, "siren": siren, "entreprise_cessee": VALEUR_cessation}, timeout=10)
         if resp.status_code == 200:
             return resp.json()
         else:
